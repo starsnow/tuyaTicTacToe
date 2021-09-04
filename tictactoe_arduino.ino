@@ -193,7 +193,7 @@ unsigned char hex[10] = {"0"};
 //unsigned char dp_raw_value[8] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
 //int dp_fault_value = 0x01;
 
-/* Stores all DPs and their types. PS: array[][0]:dpid, array[][1]:dp type. 
+/* Stores all DPs and their types. PS: array[][0]:dpid, array[][1]:dp type.
  *                                     dp type(TuyaDefs.h) : DP_TYPE_RAW, DP_TYPE_BOOL, DP_TYPE_VALUE, DP_TYPE_STRING, DP_TYPE_ENUM, DP_TYPE_BITMAP
 */
 unsigned char dp_array[][2] = {
@@ -285,7 +285,7 @@ void loop()
         }
     }
 
-    game.gameLoop();
+    game.update();
 }
 
 /**
@@ -297,20 +297,23 @@ void loop()
  */
 unsigned char dp_process(unsigned char dpid, const unsigned char value[], unsigned short length)
 {
+    int chessType = 0;
     switch (dpid)
     {
     case DPID_GAME_DATA:
         break;
-        
+
     case DPID_GAME_RESULT:
+        my_device.mcu_dp_update(dpid, game.getResult(), length);
         break;
-        
+
     case DPID_GAME_START:
         dp_value_value = my_device.mcu_get_dp_download_data(dpid, value, length); /* Get the value of the down DP command */
         game.init(dp_value_value);
+        clearGameBoard();
         my_device.mcu_dp_update(dpid, value, length);
         break;
-        
+
     case:DPID_CHESS0:
     case:DPID_CHESS1:
     case:DPID_CHESS2:
@@ -321,9 +324,30 @@ unsigned char dp_process(unsigned char dpid, const unsigned char value[], unsign
     case:DPID_CHESS7:
     case:DPID_CHESS8:
         dp_value_value = my_device.mcu_get_dp_download_data(dpid, value, length); /* Get the value of the down DP command */
-        my_device.mcu_dp_update(dpid, value, length);
+        game.input(dp_value_value);
+        switch (game.getChessType(dpid))
+        {
+            case 0:
+                chessType = 0;
+                break;
+
+            case CHESS_X:
+                chessType = 1;
+                break;
+
+            case CHESS_O:
+                chessType = 2;
+                break;
+        }
+
+        my_device.mcu_dp_update(dpid, chessType, length);
+
+        if (game.getState() == GAME_OVER)
+        {
+            my_device.mcu_dp_update(DPID_GAME_RESULT, game.getResult(), 4);
+        }
         break;
-        
+
     case DPID_SWITCH_LED:
         dp_bool_value = my_device.mcu_get_dp_download_data(dpid, value, length); /* Get the value of the down DP command */
         if (dp_bool_value)
@@ -514,5 +538,21 @@ unsigned char dp_process(unsigned char dpid, const unsigned char value[], unsign
  */
 void dp_update_all(void)
 {
-    my_device.mcu_dp_update(DPID_SWITCH_LED, led_state, 1);
 }
+
+void clearGameBoard()
+{
+    my_device.mcu_dp_update(DPID_CHESS0, 0, 1);
+    my_device.mcu_dp_update(DPID_CHESS1, 0, 1);
+    my_device.mcu_dp_update(DPID_CHESS2, 0, 1);
+    my_device.mcu_dp_update(DPID_CHESS3, 0, 1);
+    my_device.mcu_dp_update(DPID_CHESS4, 0, 1);
+    my_device.mcu_dp_update(DPID_CHESS5, 0, 1);
+    my_device.mcu_dp_update(DPID_CHESS6, 0, 1);
+    my_device.mcu_dp_update(DPID_CHESS7, 0, 1);
+    my_device.mcu_dp_update(DPID_CHESS8, 0, 1);
+
+    my_device.mcu_dp_update(DPID_GAME_RESULT, 0, 1);
+}
+
+

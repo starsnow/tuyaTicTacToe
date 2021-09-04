@@ -48,6 +48,7 @@ private:
     RESULT result;
     char   playerChess, AIChess;
     int    chessCount;
+    int    inputPos;
 
 public:
     TicTacToe()
@@ -168,10 +169,9 @@ public:
     {
         int r = 0;
         int l = 0;
-        int pos = 0;
 
-        r = pos / BOARD_SIZE;
-        l = pos % BOARD_SIZE;
+        r = inputPos / BOARD_SIZE;
+        l = inputPos % BOARD_SIZE;
 
         return POS(r, l);
     }
@@ -225,7 +225,40 @@ public:
 #endif
     }
 
-    void gameLoop()
+    int getChessType(int chessIndex)
+    {
+        if (chessIndex < 0 && chessIndex > MAX_CHESS_NUM - 1)
+            return;
+
+        int r = chessIndex / BOARD_SIZE;
+        int l = chessIndex % BOARD_SIZE;
+
+        return board[r][l];
+    }
+
+    int getGameResult()
+    {
+        return result;
+    }
+
+    int getState()
+    {
+        return state;
+    }
+
+    // 保存最后一次存放的输入
+    void input(int chessIndex)
+    {
+        if (state != PLAYER_TURN)
+            return;
+
+        if (chessIndex < 0 && chessIndex > MAX_CHESS_NUM - 1)
+            return;
+
+        pos = chessIndex;
+    }
+
+    void update()
     {
         int r, l;
 
