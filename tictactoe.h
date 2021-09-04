@@ -54,7 +54,7 @@ public:
     {
         state = NOT_STARTED;
     }
-    
+
     void init(int firstHand)
     {
         result = NO_RESULT;
@@ -101,20 +101,21 @@ public:
         if (pos.r == -1)
             return;
 
-        if (putChess(playerChess, pos.r, pos.l))
-        {
-            state = AI_TURN;
-            if (checkWin(pos.r, pos.l))
-            {
-                state = GAME_OVER;
-                result = PLAYER_WIN;
-            }
+        if (! putChess(playerChess, pos.r, pos.l))
+            return;
 
-            if (checkGameOver())
-            {
-                state = GAME_OVER;
-                result = DRAW;
-            }
+        state = AI_TURN;
+        if (checkWin(pos.r, pos.l))
+        {
+            state = GAME_OVER;
+            result = PLAYER_WIN;
+            return;
+        }
+
+        if (checkGameOver())
+        {
+            state = GAME_OVER;
+            result = DRAW;
         }
     }
 
@@ -126,23 +127,25 @@ public:
         if (pos.r == -1)
             return;
 
-        if (putChess(AIChess, pos.r, pos.l))
-        {
-            state = PLAYER_TURN;
-            if (checkWin(pos.r, pos.l))
-            {
-                state = GAME_OVER;
-                result = AI_WIN;
-            }
+        if (! putChess(AIChess, pos.r, pos.l))
+            return;
 
-            if (checkGameOver())
-            {
-                state = GAME_OVER;
-                result = DRAW;
-            }
+        state = PLAYER_TURN;
+        if (checkWin(pos.r, pos.l))
+        {
+            state = GAME_OVER;
+            result = AI_WIN;
+            return;
+        }
+
+        if (checkGameOver())
+        {
+            state = GAME_OVER;
+            result = DRAW;
         }
     }
 
+    // 先实现 AI 随机走，功能完成了再做算法
     POS getAIMove()
     {
         int pos;
@@ -166,7 +169,7 @@ public:
         int r = 0;
         int l = 0;
         int pos = 0;
-      
+
         r = pos / BOARD_SIZE;
         l = pos % BOARD_SIZE;
 
@@ -228,7 +231,7 @@ public:
 
         switch (state)
         {
-            case GAME_OVER: 
+            case GAME_OVER:
             case NOT_STARTED:
                 break;
 
