@@ -49,17 +49,25 @@ private:
     char   playerChess, AIChess;
     int    chessCount;
     int    inputPos;
+    void   (*cbWhenChessChanged)(int chessIndex);
 
 public:
     TicTacToe()
     {
         state = NOT_STARTED;
+        cbWhenChessChanged = NULL;
+    }
+
+    void registerCallbackWhenChessChanged(void (*cb)(int))
+    {
+        cbWhenChessChanged = cb;
     }
 
     void init(int firstHand)
     {
         result = NO_RESULT;
         chessCount = 0;
+        inputPos = -1;
 
         for (int i = 0; i < BOARD_SIZE; ++i)
         {
@@ -69,14 +77,21 @@ public:
             }
         }
 
+        /*
         board[0][0] = board[0][2] = board[1][0] = board[1][1] = 'O';
         board[0][1] = board[1][2] = board[2][0] = 'X';
+        chessCount = 7;
+        */
 
         printMap();
-        chessCount = 7;
+
         if (firstHand == 1)
         {
             state = PLAYER_TURN;
+        }
+        else
+        {
+            state = AI_TURN;
         }
 
         // playerChess = (random(2) == 0 ? CHESS_O : CHESS_X);
@@ -91,6 +106,11 @@ public:
 
         board[row][col] = chess;
         ++chessCount;
+        if (cbWhenChessChanged != NULL)
+        {
+            cbWhenChessChanged(row * BOARD_SIZE + col);
+        }
+
         return true;
     }
 
@@ -146,7 +166,7 @@ public:
         }
     }
 
-    // ÏÈÊµÏÖ AI Ëæ»ú×ß£¬¹¦ÄÜÍê³ÉÁËÔÙ×öËã·¨
+    // å…ˆå®ç° AI éšæœºèµ°ï¼ŒåŠŸèƒ½å®Œæˆäº†å†åšç®—æ³•
     POS getAIMove()
     {
         int pos;
@@ -225,7 +245,7 @@ public:
 #endif
     }
 
-    int getChessType(int chessIndex)
+    char getChessType(int chessIndex)
     {
         if (chessIndex < 0 && chessIndex > MAX_CHESS_NUM - 1)
             return;
@@ -236,7 +256,7 @@ public:
         return board[r][l];
     }
 
-    int getGameResult()
+    int getResult()
     {
         return result;
     }
@@ -246,7 +266,7 @@ public:
         return state;
     }
 
-    // ±£´æ×îºóÒ»´Î´æ·ÅµÄÊäÈë
+    // ä¿å­˜æœ€åä¸€æ¬¡å­˜æ”¾çš„è¾“å…¥
     void input(int chessIndex)
     {
         if (state != PLAYER_TURN)
@@ -255,7 +275,7 @@ public:
         if (chessIndex < 0 && chessIndex > MAX_CHESS_NUM - 1)
             return;
 
-        pos = chessIndex;
+        inputPos = chessIndex;
     }
 
     void update()

@@ -198,6 +198,7 @@ unsigned char hex[10] = {"0"};
 */
 unsigned char dp_array[][2] = {
   {DPID_SWITCH_LED, DP_TYPE_BOOL},
+ /*
   {DPID_WORK_MODE, DP_TYPE_ENUM},
   {DPID_BRIGHT_VALUE, DP_TYPE_VALUE},
   {DPID_TEMP_VALUE, DP_TYPE_VALUE},
@@ -214,6 +215,7 @@ unsigned char dp_array[][2] = {
   {DPID_DREAMLIGHTMIC_MUSIC_DATA, DP_TYPE_RAW},
   {DPID_LIGHTPIXEL_NUMBER_SET, DP_TYPE_VALUE},
   {DPID_GAME_DATA, DP_TYPE_VALUE},
+    */
   {DPID_GAME_RESULT, DP_TYPE_VALUE},
   {DPID_GAME_START, DP_TYPE_VALUE},
   {DPID_CHESS0, DP_TYPE_VALUE},
@@ -225,7 +227,6 @@ unsigned char dp_array[][2] = {
   {DPID_CHESS6, DP_TYPE_VALUE},
   {DPID_CHESS7, DP_TYPE_VALUE},
   {DPID_CHESS8, DP_TYPE_VALUE},
-  {DPID_CHESS9, DP_TYPE_VALUE},
 };
 
 unsigned char pid[] = {"vhj6p7rzvoemihhx"}; //*********处替换成涂鸦IoT平台自己创建的产品的PID
@@ -236,6 +237,7 @@ void setup()
     pinMode(WIFI_RECONNECT_BUTTON_PIN, INPUT_PULLUP);
 
     Serial.begin(9600);
+    Serial1.begin(9600);
     //Initialize led port, turn off led.
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
@@ -243,13 +245,19 @@ void setup()
     //incoming all DPs and their types array, DP numbers
     //Enter the PID and MCU software version
     my_device.init(pid, mcu_ver);
-    my_device.set_dp_cmd_total(dp_array, 29);
+   // my_device.set_dp_cmd_total(dp_array, 29);
+    my_device.set_dp_cmd_total(dp_array, 12);
     //register DP download processing callback function
     my_device.dp_process_func_register(dp_process);
     //register upload all DP callback function
     my_device.dp_update_all_func_register(dp_update_all);
 
 //    initCube2812();
+
+        Serial1.print("Serial1 begin");
+
+    game.registerCallbackWhenChessChanged(cbWhenChessChanged);
+
 }
 
 void loop()
@@ -297,7 +305,11 @@ void loop()
  */
 unsigned char dp_process(unsigned char dpid, const unsigned char value[], unsigned short length)
 {
+    Serial1.print("in db process, dpid: ");
+    Serial1.println(dpid);
+
     int chessType = 0;
+    int chessIndex = 0;
     switch (dpid)
     {
     case DPID_GAME_DATA:
@@ -310,37 +322,39 @@ unsigned char dp_process(unsigned char dpid, const unsigned char value[], unsign
     case DPID_GAME_START:
         dp_value_value = my_device.mcu_get_dp_download_data(dpid, value, length); /* Get the value of the down DP command */
         game.init(dp_value_value);
-        clearGameBoard();
+        refreshUI();
         my_device.mcu_dp_update(dpid, value, length);
         break;
 
-    case:DPID_CHESS0:
-    case:DPID_CHESS1:
-    case:DPID_CHESS2:
-    case:DPID_CHESS3:
-    case:DPID_CHESS4:
-    case:DPID_CHESS5:
-    case:DPID_CHESS6:
-    case:DPID_CHESS7:
-    case:DPID_CHESS8:
-        dp_value_value = my_device.mcu_get_dp_download_data(dpid, value, length); /* Get the value of the down DP command */
-        game.input(dp_value_value);
-        switch (game.getChessType(dpid))
+    case DPID_CHESS0:
+    case DPID_CHESS1:
+    case DPID_CHESS2:
+    case DPID_CHESS3:
+    case DPID_CHESS4:
+    case DPID_CHESS5:
+    case DPID_CHESS6:
+    case DPID_CHESS7:
+    case DPID_CHESS8:
+        switch (dpid)
         {
-            case 0:
-                chessType = 0;
-                break;
-
-            case CHESS_X:
-                chessType = 1;
-                break;
-
-            case CHESS_O:
-                chessType = 2;
-                break;
-        }
-
-        my_device.mcu_dp_update(dpid, chessType, length);
+            case DPID_CHESS0: chessIndex = 0; break;
+            case DPID_CHESS1: chessIndex = 1; break;
+            case DPID_CHESS2: chessIndex = 2; break;
+            case DPID_CHESS3: chessIndex = 3; break;
+            case DPID_CHESS4: chessIndex = 4; break;
+            case DPID_CHESS5: chessIndex = 5; break;
+            case DPID_CHESS6: chessIndex = 6; break;
+            case DPID_CHESS7: chessIndex = 7; break;
+            case DPID_CHESS8: chessIndex = 8; break;
+            }
+        dp_value_value = my_device.mcu_get_dp_download_data(dpid, value, length); /* Get the value of the down DP command */
+        game.input(chessIndex);
+        Serial1.print("db: ");
+        Serial1.print(dpid);
+        Serial1.print(" val: ");
+        Serial1.print(dp_value_value);
+        Serial1.print(" length: ");
+        Serial1.println(length);
 
         if (game.getState() == GAME_OVER)
         {
@@ -540,19 +554,42 @@ void dp_update_all(void)
 {
 }
 
-void clearGameBoard()
-{
-    my_device.mcu_dp_update(DPID_CHESS0, 0, 1);
-    my_device.mcu_dp_update(DPID_CHESS1, 0, 1);
-    my_device.mcu_dp_update(DPID_CHESS2, 0, 1);
-    my_device.mcu_dp_update(DPID_CHESS3, 0, 1);
-    my_device.mcu_dp_update(DPID_CHESS4, 0, 1);
-    my_device.mcu_dp_update(DPID_CHESS5, 0, 1);
-    my_device.mcu_dp_update(DPID_CHESS6, 0, 1);
-    my_device.mcu_dp_update(DPID_CHESS7, 0, 1);
-    my_device.mcu_dp_update(DPID_CHESS8, 0, 1);
+const int allChessDp[9] = { DPID_CHESS0, DPID_CHESS1, DPID_CHESS2, DPID_CHESS3, DPID_CHESS4, DPID_CHESS5, DPID_CHESS6, DPID_CHESS7, DPID_CHESS8 };
 
-    my_device.mcu_dp_update(DPID_GAME_RESULT, 0, 1);
+void refreshUI()
+{
+    char chessType;
+
+    for (int i = 0; i < 9; ++i)
+    {
+        chessType = game.getChessType(i);
+        my_device.mcu_dp_update(allChessDp[i], chessType == 0 ? 0 : (chessType == 'X' ? 1 : 2), 4);
+    }
+
+    my_device.mcu_dp_update(DPID_GAME_RESULT, 0, 4);
 }
 
+void cbWhenChessChanged(int chessIndex)
+{
+    Serial1.print("cb: ");
+    Serial1.println(chessIndex);
 
+    int chessType = 0;
+
+    switch (game.getChessType(chessIndex))
+    {
+        case 0:
+            chessType = 0;
+            break;
+
+        case CHESS_X:
+            chessType = 1;
+            break;
+
+        case CHESS_O:
+            chessType = 2;
+            break;
+    }
+
+    my_device.mcu_dp_update(allChessDp[chessIndex], chessType, 4);
+}
