@@ -355,11 +355,6 @@ unsigned char dp_process(unsigned char dpid, const unsigned char value[], unsign
         Serial1.print(dp_value_value);
         Serial1.print(" length: ");
         Serial1.println(length);
-
-        if (game.getState() == GAME_OVER)
-        {
-            my_device.mcu_dp_update(DPID_GAME_RESULT, game.getResult(), 4);
-        }
         break;
 
     case DPID_SWITCH_LED:
@@ -592,4 +587,10 @@ void cbWhenChessChanged(int chessIndex)
     }
 
     my_device.mcu_dp_update(allChessDp[chessIndex], chessType, 4);
+
+
+    if (game.getState() == GAME_OVER)
+    {
+        my_device.mcu_dp_update(DPID_GAME_RESULT, game.getResult(), 4);
+    }
 }
